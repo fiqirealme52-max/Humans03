@@ -1,47 +1,34 @@
-// Bring the Humans 03 — a make.fun TikTok ad entry.
+// A working bring-the-humans-03 entry (Node 22, standard library only): it
+// copies VIDEO.json from the repository root to /output/VIDEO.json, where the
+// gate reads it. That is all the program has to do. The entry is the video
+// itself: an original vertical TikTok ad for make.fun, made new for this
+// bounty, showing make.fun's brand badge from its first frame and ending on
+// make.fun's referral end card with the entrant's own referral code.
+// VIDEO.json names the posted video; the house reads the video itself, so
+// nothing this program writes about the video is scored.
 //
-// The entry is the video itself. This program only hands the house the
-// video's address: it copies VIDEO.json from the repository root to /output,
-// where the gate reads it. Nothing this program writes about the video is
-// scored; the house reads the video itself from TikTok.
-//
-// The ad was made entirely by the agent in the recorded build sessions:
-// press-pack art and screenshots, text the agent laid out, a voice the agent
-// generated, all rendered with ffmpeg — no person filmed, no footage taken
-// from anywhere else. make.fun's brand badge sits on the video from its
-// first frame, and it ends on make.fun's referral end card carrying the
-// account's own referral code.
-//
-// Run the way the grader does:
+// Outside the grader's container, MAKEFUN_BOT_DIR and MAKEFUN_OUTPUT_DIR
+// stand in for /bot and /output:
 //   mkdir -p out && MAKEFUN_BOT_DIR=. MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { copyFileSync, mkdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-const BOT_DIR = process.env.MAKEFUN_BOT_DIR ?? "/bot";
-const OUTPUT_DIR = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
+const BOT_DIR = process.env.MAKEFUN_BOT_DIR ?? '/bot';
+const OUTPUT_DIR = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 
 mkdirSync(OUTPUT_DIR, { recursive: true });
-const source = join(BOT_DIR, "VIDEO.json");
-try {
-  // The placeholder still names <handle>/<id>: refuse to hand in a
-  // placeholder, so a half-finished entry can never be submitted by mistake.
-  const parsed: unknown = JSON.parse(readFileSync(source, "utf8"));
-  const url =
-    typeof parsed === "object" && parsed !== null
-      ? (parsed as Record<string, unknown>).url
-      : undefined;
-  if (
-    typeof url !== "string" ||
-    !url.startsWith("https://www.tiktok.com/@") ||
-    url.includes("<") ||
-    url.includes(">")
-  ) {
-    console.error("VIDEO.json does not name a TikTok video yet.");
-    process.exit(1);
-  }
-  copyFileSync(source, join(OUTPUT_DIR, "VIDEO.json"));
-} catch (err) {
-  console.error(`VIDEO.json could not be copied from ${BOT_DIR}: ${(err as Error).message}`);
+const src = join(BOT_DIR, 'VIDEO.json');
+const parsed = JSON.parse(readFileSync(src, 'utf8'));
+if (typeof parsed !== 'object' || parsed === null ||
+    typeof parsed.url !== 'string') {
+  console.error('VIDEO.json must be a JSON object with a url string');
   process.exit(1);
 }
+if (!parsed.url.startsWith('https://www.tiktok.com/@') ||
+    !parsed.url.includes('/video/')) {
+  console.error('VIDEO.json url must be a TikTok video address');
+  process.exit(1);
+}
+copyFileSync(src, join(OUTPUT_DIR, 'VIDEO.json'));
+console.log(`wrote ${join(OUTPUT_DIR, 'VIDEO.json')}`);
